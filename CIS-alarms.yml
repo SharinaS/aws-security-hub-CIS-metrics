@@ -2,13 +2,40 @@
 AWSTemplateFormatVersion: 2010-09-09
 Description: CIS AWS Foundations Benchmark Metric Alarms
 Parameters:
-  AlarmNotificationTopicARN:
-    Description: SNS topic to send alerts to
-    Type: String
-  CloudtrailLogGroupName:
-    Description: Name of the Cloudtrail log group
-    Type: String
+  Email:
+    Type: String 
+    Default: sharina@1strategy.com #TODO: remove default
+    Description: > 
+      The email you would like SNS topic notifications to be sent to when a CloudWatch alarm goes off.
+
 Resources:
+
+  # ------------------------------
+  # Log Group
+  # ------------------------------
+
+  CISMetricsLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      RetentionInDays: 14
+
+  # ------------------------------
+  # SNS Topic and Subscription
+  # ------------------------------
+
+  CISMetricsTopic:
+    Type: AWS::SNS::Topic
+    Properties: 
+      DisplayName: !Sub ${AWS::StackName}-CIS-Metrics-Topic
+      TopicName: !Sub ${AWS::StackName}-CIS-Metrics-Topic
+  
+  CISMetricsEmailSubscription: 
+    Type: AWS::SNS::Subscription
+    Properties: 
+      Endpoint: !Ref Email
+      Protocol: email
+      TopicArn: !Ref CISMetricsTopic
+
 #===============================================================================================================================
 # MetricFilter and CloudWatch Alarm Section
 #===============================================================================================================================
@@ -25,16 +52,17 @@ Resources:
       Namespace: CloudTrailMetrics
       Statistic: Sum
       Period: 300
-      EvaluationPeriods: '1'
+      EvaluationPeriods: 1
       Threshold: 1
       TreatMissingData: notBreaching
       AlarmActions:
-        - !Ref AlarmNotificationTopicARN
+        - !Ref CISMetricsTopic
       ComparisonOperator: GreaterThanOrEqualToThreshold
+
   UnauthorizedApiCallsFilter:
     Type: AWS::Logs::MetricFilter
     Properties:
-      LogGroupName: !Ref CloudtrailLogGroupName
+      LogGroupName: !Ref CISMetricsLogGroup
       FilterPattern: |-
         {
           ($.errorCode = "*UnauthorizedOperation") ||
@@ -61,12 +89,13 @@ Resources:
       Threshold: 1
       TreatMissingData: notBreaching
       AlarmActions:
-        - !Ref AlarmNotificationTopicARN
+        - !Ref CISMetricsTopic
       ComparisonOperator: GreaterThanOrEqualToThreshold
+
   NoMfaConsoleLoginsFilter:
     Type: AWS::Logs::MetricFilter
     Properties:
-      LogGroupName: !Ref CloudtrailLogGroupName
+      LogGroupName: !Ref CISMetricsLogGroup
       FilterPattern: |-
         {
           ($.eventName = "ConsoleLogin") &&
@@ -96,12 +125,13 @@ Resources:
       Threshold: 1
       TreatMissingData: notBreaching
       AlarmActions:
-        - !Ref AlarmNotificationTopicARN
+        - !Ref CISMetricsTopic
       ComparisonOperator: GreaterThanOrEqualToThreshold
+
   RootAccountLoginsFilter:
     Type: AWS::Logs::MetricFilter
     Properties:
-      LogGroupName: !Ref CloudtrailLogGroupName
+      LogGroupName: !Ref CISMetricsLogGroup
       FilterPattern: |-
         {
           $.userIdentity.type = "Root" &&
@@ -129,12 +159,13 @@ Resources:
       Threshold: 1
       TreatMissingData: notBreaching
       AlarmActions:
-        - !Ref AlarmNotificationTopicARN
+        - !Ref CISMetricsTopic
       ComparisonOperator: GreaterThanOrEqualToThreshold
+
   IAMPolicyChangesFilter:
     Type: AWS::Logs::MetricFilter
     Properties:
-      LogGroupName: !Ref CloudtrailLogGroupName
+      LogGroupName: !Ref CISMetricsLogGroup
       FilterPattern: |-
         {
           ($.eventName=DeleteGroupPolicy) ||
@@ -175,12 +206,13 @@ Resources:
       Threshold: 1
       TreatMissingData: notBreaching
       AlarmActions:
-        - !Ref AlarmNotificationTopicARN
+        - !Ref CISMetricsTopic
       ComparisonOperator: GreaterThanOrEqualToThreshold
+      
   CloudtrailConfigChangesFilter:
     Type: AWS::Logs::MetricFilter
     Properties:
-      LogGroupName: !Ref CloudtrailLogGroupName
+      LogGroupName: !Ref CISMetricsLogGroup
       FilterPattern: |-
         {
           ($.eventName = CreateTrail) ||
@@ -207,17 +239,18 @@ Resources:
       MetricName: ConsoleLoginFailures
       Namespace: CloudTrailMetrics
       Statistic: Sum
-      Period: '300'
-      EvaluationPeriods: '1'
+      Period: 300
+      EvaluationPeriods: 1
       Threshold: 1
       TreatMissingData: notBreaching
       AlarmActions:
-        - !Ref AlarmNotificationTopicARN
+        - !Ref CISMetricsTopic
       ComparisonOperator: GreaterThanOrEqualToThreshold
+
   FailedConsoleLoginsFilter:
     Type: AWS::Logs::MetricFilter
     Properties:
-      LogGroupName: !Ref CloudtrailLogGroupName
+      LogGroupName: !Ref CISMetricsLogGroup
       FilterPattern: |-
         {
           ($.eventName = ConsoleLogin) &&
@@ -247,12 +280,13 @@ Resources:
       Threshold: 1
       TreatMissingData: notBreaching
       AlarmActions:
-        - !Ref AlarmNotificationTopicARN
+        - !Ref CISMetricsTopic
       ComparisonOperator: GreaterThanOrEqualToThreshold
+
   DisabledOrDeletedCmksFilter:
     Type: AWS::Logs::MetricFilter
     Properties:
-      LogGroupName: !Ref CloudtrailLogGroupName
+      LogGroupName: !Ref CISMetricsLogGroup
       FilterPattern: |-
         {
           ($.eventSource = kms.amazonaws.com) &&
@@ -279,12 +313,13 @@ Resources:
       Threshold: 1
       TreatMissingData: notBreaching
       AlarmActions:
-        - !Ref AlarmNotificationTopicARN
+        - !Ref CISMetricsTopic
       ComparisonOperator: GreaterThanOrEqualToThreshold
+
   S3BucketPolicyChangeFilter:
     Type: AWS::Logs::MetricFilter
     Properties:
-      LogGroupName: !Ref CloudtrailLogGroupName
+      LogGroupName: !Ref CISMetricsLogGroup
       FilterPattern: |-
         {
           ($.eventSource = s3.amazonaws.com) &&
@@ -319,19 +354,20 @@ Resources:
       Threshold: 1
       TreatMissingData: notBreaching
       AlarmActions:
-        - !Ref AlarmNotificationTopicARN
+        - !Ref CISMetricsTopic
       ComparisonOperator: GreaterThanOrEqualToThreshold
+
   AWSConfigConfigurationChangeFilter:
     Type: AWS::Logs::MetricFilter
     Properties:
-      LogGroupName: !Ref CloudtrailLogGroupName
+      LogGroupName: !Ref CISMetricsLogGroup
       FilterPattern: |-
         {
           ($.eventSource = config.amazonaws.com) && 
           (($.eventName=StopConfigurationRecorder)||
-           ($.eventName=DeleteDeliveryChannel)||
-           ($.eventName=PutDeliveryChannel)||
-           ($.eventName=PutConfigurationRecorder))
+            ($.eventName=DeleteDeliveryChannel)||
+            ($.eventName=PutDeliveryChannel)||
+            ($.eventName=PutConfigurationRecorder))
         }
       MetricTransformations:
       - MetricValue: '1'
@@ -354,12 +390,13 @@ Resources:
       Threshold: 1
       TreatMissingData: notBreaching
       AlarmActions:
-        - !Ref AlarmNotificationTopicARN
+        - !Ref CISMetricsTopic
       ComparisonOperator: GreaterThanOrEqualToThreshold
+
   SecurityGroupChangeFilter:
     Type: AWS::Logs::MetricFilter
     Properties:
-      LogGroupName: !Ref CloudtrailLogGroupName
+      LogGroupName: !Ref CISMetricsLogGroup
       FilterPattern: |-
         {
           ($.eventName = AuthorizeSecurityGroupIngress) || 
@@ -390,12 +427,13 @@ Resources:
       Threshold: 1
       TreatMissingData: notBreaching
       AlarmActions:
-        - !Ref AlarmNotificationTopicARN
+        - !Ref CISMetricsTopic
       ComparisonOperator: GreaterThanOrEqualToThreshold
+
   NACLChangeFilter:
     Type: AWS::Logs::MetricFilter
     Properties:
-      LogGroupName: !Ref CloudtrailLogGroupName
+      LogGroupName: !Ref CISMetricsLogGroup
       FilterPattern: |-
         {
           ($.eventName = CreateNetworkAcl) || 
@@ -426,12 +464,13 @@ Resources:
       Threshold: 1
       TreatMissingData: notBreaching
       AlarmActions:
-        - !Ref AlarmNotificationTopicARN
+        - !Ref CISMetricsTopic
       ComparisonOperator: GreaterThanOrEqualToThreshold
+
   NetworkGatewayChangeFilter:
     Type: AWS::Logs::MetricFilter
     Properties:
-      LogGroupName: !Ref CloudtrailLogGroupName
+      LogGroupName: !Ref CISMetricsLogGroup
       FilterPattern: |-
         {
           ($.eventName = CreateCustomerGateway) || 
@@ -462,12 +501,13 @@ Resources:
       Threshold: 1
       TreatMissingData: notBreaching
       AlarmActions:
-        - !Ref AlarmNotificationTopicARN
+        - !Ref CISMetricsTopic
       ComparisonOperator: GreaterThanOrEqualToThreshold
+
   RouteTableChangeFilter:
     Type: AWS::Logs::MetricFilter
     Properties:
-      LogGroupName: !Ref CloudtrailLogGroupName
+      LogGroupName: !Ref CISMetricsLogGroup
       FilterPattern: |-
         {
           ($.eventName = CreateRoute) || 
@@ -499,12 +539,13 @@ Resources:
       Threshold: 1
       TreatMissingData: notBreaching
       AlarmActions:
-        - !Ref AlarmNotificationTopicARN
+        - !Ref CISMetricsTopic
       ComparisonOperator: GreaterThanOrEqualToThreshold
+      
   VPCChangeFilter:
     Type: AWS::Logs::MetricFilter
     Properties:
-      LogGroupName: !Ref CloudtrailLogGroupName
+      LogGroupName: !Ref CISMetricsLogGroup
       FilterPattern: |-
         {
           ($.eventName = CreateVpc) || 
