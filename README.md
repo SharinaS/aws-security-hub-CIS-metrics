@@ -1,10 +1,16 @@
 # aws-security-hub-CIS-metrics
 
-This repo contains a cloudformation template which will create all of the needed log filters, metrics and alarms to conform with the CIS framework used by AWS Security hub.
+## Credit
+
+Credit for building the majority of this template goes to: https://github.com/rewindio/aws-security-hub-CIS-metrics.
+
+--------------
+
+This repo contains a cloudformation template which will create all of the needed log filters, metrics and alarms to conform with the CIS framework used by AWS Security hub. 
 
 I've packaged these up in Cloudformation and based them on the [AWS quickstart example](https://github.com/aws-quickstart/quickstart-compliance-cis-benchmark/blob/master/templates/cis-benchmark.template).  It should be noted however that using the AWS quickstart will not work for Security hub because the metric filters do not exactly match that which is documented in the CIS document.  Security hub needs an exact match to flag a standard as being compliant.
 
-# Using
+## Using
 * Configure Cloudtrail to send logs to a Cloudwatch log group as discussed in the Security Hub documentation
 * Create a new SNS topic to send your alerts to. Subscribe either your email or use our [cloudwatch slack notifier](https://github.com/rewindio/aws-cloudwatch-slack-notifier)
 * Create a new Cloudformation stack using the template in this repo.  You'll be prompted for the SNS Topic ARN and the name of the Cloudwatch logs group that Cloudtrail is logging to (ie. /aws/cloudtrail)
@@ -14,7 +20,7 @@ That should be it.  Note that security hub only checks for compliance with CIS s
 
 ---------------------------
 
-## How to Deploy
+## How to Deploy to AWS
 
 You will have to create a json file in the parameters folder, and populate it with the email you would like to use to receive SNS notifications.
 It should be formated like: 
@@ -29,15 +35,15 @@ Deploy from the AWS CLI:
 
 ```bash
 aws cloudformation deploy \
---template-file CIS-alarms-cfn.yml \
---stack-name SS-NextGen-Metrics-1s \
+--template-file CIS-alarms.yml \
+--stack-name <<Your Stack Name>> \
 --parameter-overrides file://parameters/CIS-alarm-params.json
---region us-west-2 \
+--region us-west-2
 ```
 
 ## How to Test a CloudWatch Alarm
 
-You may test the CloudWatch alarm for CIS 3.1 with the following command:
+You may test the CloudWatch alarm, for example CIS 3.1, with the following command:
 
 ```bash
 aws cloudwatch put-metric-data \

@@ -1,10 +1,9 @@
 ---
 AWSTemplateFormatVersion: 2010-09-09
-Description: CIS AWS Foundations Benchmark Metric Alarms
+Description: CIS AWS Foundations Benchmark Metric Alarms for 3.1-3.14
 Parameters:
   Email:
     Type: String 
-    Default: sharina@1strategy.com #TODO: remove default
     Description: > 
       The email you would like SNS topic notifications to be sent to when a CloudWatch alarm goes off.
 
@@ -541,7 +540,7 @@ Resources:
       AlarmActions:
         - !Ref CISMetricsTopic
       ComparisonOperator: GreaterThanOrEqualToThreshold
-      
+
   VPCChangeFilter:
     Type: AWS::Logs::MetricFilter
     Properties:
